@@ -7,6 +7,7 @@ from flask_cors import CORS
 from backend.config import config
 from backend.api import auth_bp, recommend_bp, favorites_bp
 import logging
+import os
 
 # Konfigurasi logging
 logging.basicConfig(
@@ -81,9 +82,15 @@ def create_app(config_name='development'):
 # Create app instance
 app = create_app()
 
+# ... existing code ...
+
+# =======================
+# PORT CONFIGURATION
+# =======================
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     app.run(
         host='0.0.0.0',
-        port=5000,
-        debug=True
+        port=port,
+        debug=False  # ✅ Disable debug di production!
     )
