@@ -1,0 +1,18 @@
+{
+  "message": "Login berhasil",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3NjkyMDQwNDR9.6wfxybz0yPgcW5sYA38mCvv2XsvaWMtsHV_GVOZSwHc",
+  "user": {
+    "email": "test@gmail.com",
+    "id": 1,
+    "username": "user_test"
+  }
+}
+
+
+Sesuaikan pengaturan di jendela Thunder Client dengan data berikut:
+
+Method: Pilih POST (di sebelah kolom URL).
+
+URL: Masukkan http://localhost:5000/api/register.
+
+Body: 1. Klik tab Body. 2. Pilih format JSON. 3. Masukkan kode ini (ganti datanya sesuka Anda): json { "username": "user_test", "email": "test@gmail.com", "password": "password123" }

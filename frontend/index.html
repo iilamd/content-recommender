@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Recommender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6, .heading {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Color System */
+        :root {
+            --primary: #FACC15;
+            --secondary: #7C3AED;
+            --accent: #FB923C;
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text-main: #0F172A;
+            --text-soft: #64748B;
+        }
+
+        body {
+            background: var(--bg);
+        }
+
+        /* Smooth Animations */
+        .smooth-transition {
+            transition: all 0.3s ease;
+        }
+
+        /* Card hover effect */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.2);
+        }
+
+        /* Button bounce */
+        .btn-bounce {
+            transition: all 0.3s ease;
+        }
+
+        .btn-bounce:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.3);
+        }
+
+        /* Platform toggle */
+        .platform-toggle {
+            transition: all 0.3s ease;
+        }
+
+        .platform-toggle:hover {
+            transform: scale(1.05) translateY(-2px);
+        }
+
+        /* Emoji reaction */
+        .emoji-reaction {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .emoji-reaction:hover {
+            transform: scale(1.4) rotate(15deg);
+        }
+
+        /* Modal overlay */
+        .modal-overlay {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Gradient line */
+        .gradient-line {
+            height: 4px;
+            background: linear-gradient(to right, #FACC15, #FB923C);
+            border-radius: 9999px;
+        }
+
+        /* Custom Alert Box - FIX #5 */
+        .custom-alert-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9998;
+            animation: fadeIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-alert {
+            min-width: 320px;
+            max-width: 500px;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: alertSlideIn 0.3s ease;
+        }
+
+        @keyframes alertSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation - Glass Effect -->
+    <nav class="fixed top-0 w-full backdrop-blur-md bg-white/70 shadow-sm z-50">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
+            <div class="heading text-xl md:text-2xl font-extrabold text-purple-700">CONTENT FINDER</div>
+            
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-8">
+                <div id="navUser" class="hidden">
+                    <span class="text-lg font-semibold text-gray-700">Hi, <span id="navUsername" class="text-purple-700"></span> 👋</span>
+                </div>
+                <button id="navAuthBtn" onclick="showAuthModal()" class="btn-bounce text-lg font-bold text-purple-700 hover:text-yellow-600">
+                    LOGIN
+                </button>
+                <button id="navLogoutBtn" onclick="handleLogout()" class="hidden btn-bounce text-sm font-bold text-gray-700 hover:text-yellow-600">
+                    LOGOUT
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <button class="md:hidden" onclick="toggleMobileMenu()">
+                <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Dropdown -->
+    <div id="mobileMenu" class="hidden fixed top-16 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg z-40 p-6">
+        <div class="flex flex-col gap-4">
+            <div id="mobileNavUser" class="hidden">
+                <span class="text-sm font-semibold">Hi, <span id="mobileNavUsername"></span> 👋</span>
+            </div>
+            <button id="mobileAuthBtn" onclick="showAuthModal()" class="btn-bounce text-sm font-bold text-left text-purple-700">LOGIN</button>
+            <button id="mobileLogoutBtn" onclick="handleLogout()" class="hidden btn-bounce text-sm font-bold text-left">LOGOUT</button>
+        </div>
+    </div>
+
+    <!-- Hero Section - FIX #4 -->
+    <section class="bg-gradient-to-br from-yellow-400 via-orange-400 to-amber-500 pt-32 pb-24">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <h1 class="heading text-6xl md:text-8xl font-extrabold text-white leading-tight mb-6">
+                Temukan Konten<br>
+                <span class="text-yellow-200">Terbaikmu</span>
+            </h1>
+            <p class="text-xl text-white/90 mt-6 max-w-2xl font-semibold">
+                Kami menganalisis preferensimu dan merekomendasikan konten YouTube, TikTok, & Instagram yang sedang hits!
+            </p>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section id="searchSection" class="hidden py-12 md:py-16">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <h2 class="heading text-3xl md:text-5xl font-extrabold mb-8" style="color: var(--text-main);">CARI KONTEN</h2>
+            
+            <!-- Platform Selection dengan Warna Berbeda -->
+            <div class="mb-8">
+                <label class="block text-sm font-bold mb-4 uppercase tracking-wider" style="color: var(--text-soft);">Pilih Platform</label>
+                <div class="grid grid-cols-3 gap-4">
+                    <button onclick="selectPlatform('youtube')" id="platformYoutube" 
+                            class="platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl">
+                        <div class="text-4xl mb-2">▶️</div>
+                        <p class="text-xs font-extrabold">YOUTUBE</p>
+                    </button>
+                    <button onclick="selectPlatform('tiktok')" id="platformTiktok" 
+                            class="platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl">
+                        <div class="text-4xl mb-2">🎵</div>
+                        <p class="text-xs font-extrabold">TIKTOK</p>
+                    </button>
+                    <button onclick="selectPlatform('instagram')" id="platformInstagram" 
+                            class="platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl">
+                        <div class="text-4xl mb-2">📷</div>
+                        <p class="text-xs font-extrabold">INSTAGRAM</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category & Keyword (Same Size) -->
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-bold mb-3 uppercase tracking-wider" style="color: var(--text-soft);">Kategori</label>
+                    <select id="category" class="w-full px-6 py-4 rounded-2xl bg-white shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition" style="color: var(--text-main);">
+                        <option value="">🌟 SEMUA</option>
+                        <option value="masakan">🍳 MASAKAN</option>
+                        <option value="it">💻 BELAJAR IT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-3 uppercase tracking-wider" style="color: var(--text-soft);">🔍 Kata Kunci</label>
+                    <input type="text" id="keyword" 
+                           class="w-full px-6 py-4 rounded-2xl bg-white shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           style="color: var(--text-main);"
+                           placeholder="brownies, ayam, tutorial...">
+                </div>
+            </div>
+
+            <p class="text-sm mb-6 font-semibold" style="color: var(--text-soft);">💡 Makin spesifik kata kuncinya, makin akurat hasilnya!</p>
+
+            <!-- Button Utama dengan Gradient -->
+            <button onclick="getRecommendations()" 
+                    class="btn-bounce w-full bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-500 text-white font-bold py-4 rounded-2xl shadow-xl hover:from-yellow-500 hover:to-orange-500">
+                CARI SEKARANG! 🚀
+            </button>
+        </div>
+    </section>
+
+    <!-- Results Tabs -->
+    <div id="resultsTabs" class="hidden backdrop-blur-md bg-white/70 shadow-md sticky top-16 z-30">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <div class="flex gap-8">
+                <button onclick="showTab('recommend')" id="tabRecommend" 
+                        class="py-4 text-sm font-extrabold uppercase border-b-4 border-yellow-500 text-yellow-600">
+                    ✨ REKOMENDASI (<span id="recommendCount">0</span>)
+                </button>
+                <button onclick="showTab('favorites')" id="tabFavorites" 
+                        class="py-4 text-sm font-extrabold uppercase border-b-4 border-transparent text-gray-400">
+                    💖 FAVORIT (<span id="favoritesCount">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Grid - Recommendations -->
+    <section id="resultsSection" class="hidden py-12 md:py-16">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12">
+            <!-- FIX #2: Success Message - Conditional (hanya muncul jika ada hasil) -->
+            <div id="successMessage" class="hidden text-center mb-10">
+                <h3 class="heading text-3xl md:text-3xl font-extrabold mb-3" style="color: var(--text-main);">Kami menganalisis preferensimu dan… tadaaa!</h3>
+                <p class="text-lg font-bold" style="color: var(--text-soft);">Sepertinya kamu bakal suka konten-konten ini 🔥</p>
+            </div>
+            <div id="recommendationResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- Gallery Grid - Favorites -->
+    <section id="favoritesSection" class="hidden py-12 md:py-16">
+        <div class="max-w-screen-2xl mx-auto px-6 md:px-12">
+            
+            <div id="favoritesResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </section>
+
+    <!-- Empty State -->
+    <section id="emptyState" class="py-24 md:py-32 text-center">
+        <div class="max-w-2xl mx-auto px-6">
+            <div class="text-8xl mb-8">👩🏼‍🎨</div>
+            <h2 class="heading text-3xl md:text-5xl font-extrabold mb-4" style="color: var(--text-main);">YUK, MULAI SEKARANG!</h2>
+            <p class="text-xl font-bold" style="color: var(--text-soft);">Login dan cari konten yang pas buat kamu</p>
+        </div>
+    </section>
+
+    <!-- Auth Modal - FIX #6: Ganti "AUTH" -->
+    <div id="authModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 md:p-12 relative shadow-2xl">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-3xl font-extrabold text-gray-400 hover:text-purple-600 smooth-transition">×</button>
+            
+            <h2 class="heading text-4xl md:text-4xl font-extrabold mb-10 text-purple-700">SELAMAT DATANG!</h2>
+
+            <!-- Tabs -->
+            <div class="flex gap-4 mb-8">
+                <button onclick="showLogin()" id="loginTab" class="pb-3 text-base font-extrabold border-b-4 border-yellow-500 text-yellow-600">
+                    LOGIN
+                </button>
+                <button onclick="showRegister()" id="registerTab" class="pb-3 text-base font-extrabold text-gray-400 border-b-4 border-transparent">
+                    REGISTER
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="space-y-4">
+                    <input type="email" id="loginEmail" 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           placeholder="Email">
+                    <input type="password" id="loginPassword" 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           placeholder="Password">
+                    <button onclick="handleLogin()" 
+                            class="btn-bounce w-full bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-500 text-white py-4 rounded-xl font-extrabold shadow-xl">
+                        LOGIN
+                    </button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <div class="space-y-4">
+                    <input type="text" id="regUsername" 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           placeholder="Username">
+                    <input type="email" id="regEmail" 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           placeholder="Email">
+                    <input type="password" id="regPassword" 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-purple-300 font-bold smooth-transition"
+                           placeholder="Password">
+                    <button onclick="handleRegister()" 
+                            class="btn-bounce w-full bg-gradient-to-r from-yellow-400 via-orange-400 to-amber-500 text-white py-4 rounded-xl font-extrabold shadow-xl">
+                        REGISTER
+                    </button>
+                </div>
+            </div>
+
+            <div id="authResult" class="mt-6 p-4 hidden rounded-xl font-bold text-center"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay - FIX #7: Minimum 2 detik -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 animate-bounce">🤔</div>
+            <p class="heading font-extrabold text-xl text-purple-700">Sedang mikir...</p>
+            <p class="font-semibold" style="color: var(--text-soft);">Bentar ya, lagi nyari konten yang pas!</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000/api';
+        let token = null;
+        let currentUser = null;
+        let currentPlatform = '';
+        let recommendations = [];
+        let favorites = [];
+
+        // FIX #5: Custom Alert Function dengan Style Website
+        // Custom Confirm Dialog dengan 2 tombol (Oke/Batal)
+function showCustomConfirm(message, onConfirm) {
+    // Remove existing alerts
+    const existingOverlay = document.querySelector('.custom-alert-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    // Create overlay with confirm dialog
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-alert-overlay';
+    
+    overlay.innerHTML = `
+        <div class="custom-alert">
+            <div class="text-center">
+                <div class="text-5xl mb-4">😢</div>
+                <p class="text-lg font-extrabold text-gray-800 mb-6">${message}</p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeCustomAlert()" class="btn-bounce px-8 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold shadow-lg hover:bg-gray-300">
+                        Batal
+                    </button>
+                    <button id="confirmOkeBtn" class="btn-bounce px-8 py-3 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-xl font-bold shadow-lg">
+                        Oke
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeCustomAlert();
+    };
+
+    document.body.appendChild(overlay);
+
+    // Add event listener to Oke button
+    document.getElementById('confirmOkeBtn').onclick = () => {
+        closeCustomAlert();
+        if (onConfirm) onConfirm();
+    };
+}
+
+        function closeCustomAlert() {
+            const overlay = document.querySelector('.custom-alert-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        // Utility
+        function showMessage(element, message, type) {
+            element.className = 'mt-6 p-4 rounded-xl font-bold text-center ' + 
+                (type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        // FIX #7: Minimum Loading Duration (2 detik)
+        let loadingStartTime = 0;
+        
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                loadingStartTime = Date.now();
+                overlay.classList.remove('hidden');
+            } else {
+                const elapsed = Date.now() - loadingStartTime;
+                const remainingTime = Math.max(2000 - elapsed, 0);
+                
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, remainingTime);
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+
+        // Auth Modal
+        function showAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginTab').className = 'pb-3 text-base font-extrabold border-b-4 border-yellow-500 text-yellow-600';
+            document.getElementById('registerTab').className = 'pb-3 text-base font-extrabold text-gray-400 border-b-4 border-transparent';
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('loginTab').className = 'pb-3 text-base font-extrabold text-gray-400 border-b-4 border-transparent';
+            document.getElementById('registerTab').className = 'pb-3 text-base font-extrabold border-b-4 border-yellow-500 text-yellow-600';
+        }
+
+        // Auth - Register
+        async function handleRegister() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const resultDiv = document.getElementById('authResult');
+
+            if (!username || !email || !password) {
+                showMessage(resultDiv, '⚠️ Semua field harus diisi ya!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(resultDiv, '✅ ' + data.message + ' Yuk login!', 'success');
+                    setTimeout(() => {
+                        showLogin();
+                        resultDiv.classList.add('hidden');
+                    }, 2000);
+                } else {
+                    showMessage(resultDiv, '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, '❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        // Auth - Login
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const resultDiv = document.getElementById('authResult');
+
+            if (!email || !password) {
+                showMessage(resultDiv, '⚠️ Email dan password harus diisi!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    token = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+
+                    updateNav();
+                    closeAuthModal();
+                    showSearchAndResults();
+                    loadFavorites();
+                } else {
+                    showMessage(resultDiv, '❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, '❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        // Auth - Logout
+        function handleLogout() {
+    showCustomConfirm('Yakin mau logout?', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        token = null;
+        currentUser = null;
+        recommendations = [];
+        favorites = [];
+        currentPlatform = '';
+
+        updateNav();
+        hideSearchAndResults();
+        document.getElementById('emptyState').classList.remove('hidden');
+    });
+}
+
+        function updateNav() {
+            if (token && currentUser) {
+                document.getElementById('navUser').classList.remove('hidden');
+                document.getElementById('navUsername').textContent = currentUser.username;
+                document.getElementById('navAuthBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                
+                document.getElementById('mobileNavUser').classList.remove('hidden');
+                document.getElementById('mobileNavUsername').textContent = currentUser.username;
+                document.getElementById('mobileAuthBtn').classList.add('hidden');
+                document.getElementById('mobileLogoutBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('navUser').classList.add('hidden');
+                document.getElementById('navAuthBtn').classList.remove('hidden');
+                document.getElementById('navLogoutBtn').classList.add('hidden');
+                
+                document.getElementById('mobileNavUser').classList.add('hidden');
+                document.getElementById('mobileAuthBtn').classList.remove('hidden');
+                document.getElementById('mobileLogoutBtn').classList.add('hidden');
+            }
+        }
+
+        function showSearchAndResults() {
+            document.getElementById('searchSection').classList.remove('hidden');
+            document.getElementById('resultsTabs').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+        }
+
+        function hideSearchAndResults() {
+            document.getElementById('searchSection').classList.add('hidden');
+            document.getElementById('resultsTabs').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('favoritesSection').classList.add('hidden');
+            document.getElementById('recommendationResults').innerHTML = '';
+            document.getElementById('favoritesResults').innerHTML = '';
+        }
+
+        // Platform Selection dengan Warna Berbeda
+        function selectPlatform(platform) {
+            currentPlatform = platform;
+
+            const platformColors = {
+                'youtube': 'bg-red-500 text-white shadow-xl',
+                'tiktok': 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-xl',
+                'instagram': 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white shadow-xl'
+            };
+
+            document.getElementById('platformYoutube').className = 'platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl';
+            document.getElementById('platformTiktok').className = 'platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl';
+            document.getElementById('platformInstagram').className = 'platform-toggle p-6 rounded-2xl bg-white shadow-lg hover:shadow-2xl';
+
+            document.getElementById('platform' + platform.charAt(0).toUpperCase() + platform.slice(1)).className = 
+                `platform-toggle p-6 rounded-2xl ${platformColors[platform]}`;
+        }
+
+        // Tab switching
+        function showTab(tab) {
+            const resultsSection = document.getElementById('resultsSection');
+            const favoritesSection = document.getElementById('favoritesSection');
+            const tabRecommend = document.getElementById('tabRecommend');
+            const tabFavorites = document.getElementById('tabFavorites');
+
+            if (tab === 'recommend') {
+                resultsSection.classList.remove('hidden');
+                favoritesSection.classList.add('hidden');
+                tabRecommend.className = 'py-4 text-sm font-extrabold uppercase border-b-4 border-yellow-500 text-yellow-600';
+                tabFavorites.className = 'py-4 text-sm font-extrabold uppercase border-b-4 border-transparent text-gray-400';
+            } else {
+                resultsSection.classList.add('hidden');
+                favoritesSection.classList.remove('hidden');
+                tabRecommend.className = 'py-4 text-sm font-extrabold uppercase border-b-4 border-transparent text-gray-400';
+                tabFavorites.className = 'py-4 text-sm font-extrabold uppercase border-b-4 border-pink-600 text-pink-600';
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+        }
+
+        // Get Recommendations
+        async function getRecommendations() {
+            const keyword = document.getElementById('keyword').value.trim();
+            const category = document.getElementById('category').value;
+
+            if (!currentPlatform) {
+                showCustomAlert('Pilih platform dulu ya!', 'info');
+                return;
+            }
+            if (!keyword) {
+                showCustomAlert('Kasih tau dong mau cari apa?', 'info');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${API_URL}/recommend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ platform: currentPlatform, keyword, category })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    recommendations = data.recommendations || [];
+                    renderRecommendations();
+                    showTab('recommend');
+                    showLoading(false);
+                } else {
+                    showLoading(false);
+                    showCustomAlert(data.message, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                showCustomAlert('ERROR: ' + error.message, 'error');
+            }
+        }
+
+        function getPlatformBadgeColor(platform) {
+            const colors = {
+                'youtube': 'bg-red-500 text-white',
+                'tiktok': 'bg-gradient-to-r from-pink-500 to-purple-500 text-white',
+                'instagram': 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white'
+            };
+            return colors[platform] || 'bg-gray-500 text-white';
+        }
+
+        // FIX #2 & #3: Conditional Success Message + Red Heart
+        function renderRecommendations() {
+            const container = document.getElementById('recommendationResults');
+            const successMessage = document.getElementById('successMessage');
+            document.getElementById('recommendCount').textContent = recommendations.length;
+
+            if (recommendations.length === 0) {
+                // FIX #2: Hide success message jika tidak ada hasil
+                successMessage.classList.add('hidden');
+                
+                container.innerHTML = `
+                    <div class="col-span-3 text-center py-16">
+                        <div class="text-6xl mb-4">😔</div>
+                        <p class="heading font-extrabold text-2xl text-gray-700 mb-2">Hmm.. Coba ubah kata kuncimu!</p>
+                        
+                    </div>
+                `;
+                return;
+            }
+
+            // FIX #2: Show success message hanya jika ada hasil
+            successMessage.classList.remove('hidden');
+
+            container.innerHTML = recommendations.map((item, index) => `
+                <div class="card-hover rounded-2xl bg-white shadow-lg p-6 overflow-hidden">
+                    <div class="gradient-line mb-4"></div>
+                    
+                    <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-extrabold px-4 py-2 rounded-full ${getPlatformBadgeColor(item.platform || currentPlatform)} shadow-md">
+                    ${item.platform || currentPlatform}
+                    </span>
+                    <!-- TAMBAHKAN onclick="addToFavorites(${index})" -->
+                    <button onclick="addToFavorites(${index})" class="emoji-reaction text-2xl" style="color: #ef4444;">
+                    💖
+                    </button>
+                    </div>
+
+                    <!-- KATEGORI KECIL -->
+                    <p class="text-[11px] font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                    ${item.category ? '' + item.category : ''}
+                    </p>
+
+                    <p class="text-sm font-bold mb-4 line-clamp-3" style="color: var(--text-main);">${item.caption || 'Tidak ada caption'}</p>
+                    <p class="text-xs mb-4 font-semibold" style="color: var(--text-soft);">${item.hashtags || ''}</p>
+                    ${item.video_url && item.video_url !== '#' ? `
+                        <a href="${item.video_url}" target="_blank" class="btn-bounce inline-block text-xs font-extrabold px-5 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md">
+                            LIHAT VIDEO →
+                        </a>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Favorites
+        async function loadFavorites() {
+            try {
+                const response = await fetch(`${API_URL}/favorites`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    favorites = data.favorites || [];
+                    document.getElementById('favoritesCount').textContent = favorites.length;
+                    renderFavorites();
+                }
+            } catch (error) {
+                console.error('Gagal memuat favorit:', error);
+            }
+        }
+
+        async function addToFavorites(index) {
+    const item = recommendations[index];
+
+    const button = event.target.closest('button');
+    button.style.transform = 'scale(1.5)';
+    setTimeout(() => {
+        button.style.transform = 'scale(1)';
+    }, 300);
+
+
+    try {
+        const response = await fetch(`${API_URL}/favorites`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ content_id: item.id })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // ✅ FIX 1: Await loadFavorites agar selesai dulu
+            await loadFavorites();
+            
+            // ✅ FIX 2: Tampilkan alert SETELAH counter update
+            showCustomAlert('Ditambahkan ke favorit!', 'success');
+        } else {
+            showCustomAlert(data.message, 'error');
+        }
+    } catch (error) {
+        showCustomAlert('ERROR: ' + error.message, 'error');
+    }
+}
+
+        async function removeFromFavorites(id) {
+    showCustomConfirm('Yakin mau hapus dari favorit?', async () => {
+        try {
+            const response = await fetch(`${API_URL}/favorites/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                loadFavorites();
+            }
+        } catch (error) {
+            showCustomAlert('ERROR: ' + error.message, 'error');
+        }
+    });
+}
+
+        function renderFavorites() {
+            const container = document.getElementById('favoritesResults');
+
+            if (favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-3 text-center py-16">
+                        <div class="text-6xl mb-4">💫</div>
+                        <p class="heading font-extrabold text-2xl text-gray-700 mb-2">Belum ada isinya nih</p>
+                        <p class="font-bold text-gray-500">Yuk mulai simpan konten yang kamu suka!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = favorites.map(item => `
+                <div class="card-hover rounded-2xl bg-white shadow-lg p-6 overflow-hidden">
+                    <div class="gradient-line mb-4"></div>
+                    
+                    <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-extrabold px-4 py-2 rounded-full ${getPlatformBadgeColor(item.content.platform)} shadow-md">
+                    ${item.content.platform || ''}
+                    </span>
+                    <!-- TAMBAHKAN onclick="removeFromFavorites(${item.id})" -->
+                    <button onclick="removeFromFavorites(${item.id})" class="emoji-reaction text-xl" style="color: #ef4444;">
+                     🗑️
+                    </button>
+                    </div>
+
+                    <!-- kategori kecil -->
+                    <p class="text-[11px] font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                    ${item.content.category ? '' + item.content.category : ''}
+                    </p>
+
+                    <p class="text-sm font-bold mb-4 line-clamp-3" style="color: var(--text-main);">${item.content.caption || ''}</p>
+                    <p class="text-xs mb-4 font-semibold" style="color: var(--text-soft);">${item.content.hashtags || ''}</p>
+                    ${item.content.video_url && item.content.video_url !== '#' ? `
+                        <a href="${item.content.video_url}" target="_blank" class="btn-bounce inline-block text-xs font-extrabold px-5 py-2 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-md">
+                            LIHAT VIDEO →
+                        </a>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Init
+        function init() {
+            const savedToken = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
+
+            if (savedToken && savedUser) {
+                token = savedToken;
+                currentUser = JSON.parse(savedUser);
+                updateNav();
+                showSearchAndResults();
+                loadFavorites();
+            } else {
+                updateNav();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

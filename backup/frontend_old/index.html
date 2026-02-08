@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Recommender - Local</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen p-8">
+    <!-- Login/Register Section -->
+    <div id="authSection" class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl p-8">
+        <div class="text-center mb-8">
+            <div class="text-6xl mb-4">✨</div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                Content Recommender
+            </h1>
+            <p class="text-gray-600">Sistem Rekomendasi Konten Kreator</p>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6">
+            <button onclick="showRegister()" id="registerTab" class="flex-1 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                Register
+            </button>
+            <button onclick="showLogin()" id="loginTab" class="flex-1 py-2 rounded-lg font-semibold bg-gray-100 text-gray-600">
+                Login
+            </button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm">
+            <input type="text" id="regUsername" placeholder="Username" class="w-full px-4 py-3 border rounded-lg mb-3 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <input type="email" id="regEmail" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <input type="password" id="regPassword" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <button onclick="register()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+                Register
+            </button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="hidden">
+            <input type="email" id="loginEmail" placeholder="Email" class="w-full px-4 py-3 border rounded-lg mb-3 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <input type="password" id="loginPassword" placeholder="Password" class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <button onclick="login()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+                Login
+            </button>
+        </div>
+        
+        <div id="authResult" class="mt-4 p-4 rounded-lg hidden"></div>
+    </div>
+
+    <!-- Main App Section (Hidden until login) -->
+    <div id="appSection" class="hidden max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="text-4xl">✨</div>
+                <div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        Content Recommender
+                    </h1>
+                    <p class="text-sm text-gray-600">Selamat datang, <span id="username"></span>!</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all">
+                Logout
+            </button>
+        </div>
+
+        <!-- Search Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Cari Rekomendasi Konten</h2>
+            
+            <label class="block text-sm font-medium text-gray-700 mb-3">Pilih Platform</label>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <button onclick="selectPlatform('instagram')" id="platformInstagram" class="p-4 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all">
+                    <div class="text-3xl mb-2">📷</div>
+                    <p class="font-semibold text-sm">Instagram</p>
+                </button>
+                <button onclick="selectPlatform('tiktok')" id="platformTiktok" class="p-4 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all">
+                    <div class="text-3xl mb-2">🎵</div>
+                    <p class="font-semibold text-sm">TikTok</p>
+                </button>
+                <button onclick="selectPlatform('youtube')" id="platformYoutube" class="p-4 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all">
+                    <div class="text-3xl mb-2">▶️</div>
+                    <p class="font-semibold text-sm">YouTube</p>
+                </button>
+            </div>
+
+            <label class="block text-sm font-medium text-gray-700 mb-2">Masukkan Kata Kunci</label>
+            <input type="text" id="keyword" placeholder="Contoh: tutorial makeup, resep masakan..." class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            
+            <button onclick="getRecommendations()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+                🔍 Dapatkan Rekomendasi
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <h2 class="text-2xl font-bold mb-4">Hasil Rekomendasi</h2>
+            <div id="recommendationResults" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let token = null;
+        let currentPlatform = '';
+
+        function showRegister() {
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerTab').className = 'flex-1 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white';
+            document.getElementById('loginTab').className = 'flex-1 py-2 rounded-lg font-semibold bg-gray-100 text-gray-600';
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerTab').className = 'flex-1 py-2 rounded-lg font-semibold bg-gray-100 text-gray-600';
+            document.getElementById('loginTab').className = 'flex-1 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white';
+        }
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const resultDiv = document.getElementById('authResult');
+            
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-100 text-green-800';
+                    resultDiv.textContent = '✅ ' + data.message + ' Silakan login!';
+                    resultDiv.classList.remove('hidden');
+                    setTimeout(() => showLogin(), 1500);
+                } else {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-100 text-red-800';
+                    resultDiv.textContent = '❌ ' + data.message;
+                    resultDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-100 text-red-800';
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.classList.remove('hidden');
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const resultDiv = document.getElementById('authResult');
+            
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    document.getElementById('username').textContent = data.user.username;
+                    document.getElementById('authSection').classList.add('hidden');
+                    document.getElementById('appSection').classList.remove('hidden');
+                } else {
+                    resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-100 text-red-800';
+                    resultDiv.textContent = '❌ ' + data.message;
+                    resultDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-100 text-red-800';
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            token = null;
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('appSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+        }
+
+        function selectPlatform(platform) {
+            currentPlatform = platform;
+            
+            // Reset all buttons
+            ['instagram', 'tiktok', 'youtube'].forEach(p => {
+                document.getElementById('platform' + p.charAt(0).toUpperCase() + p.slice(1)).className = 
+                    'p-4 rounded-xl border-2 border-gray-200 hover:border-purple-500 transition-all';
+            });
+            
+            // Highlight selected
+            document.getElementById('platform' + platform.charAt(0).toUpperCase() + platform.slice(1)).className = 
+                'p-4 rounded-xl border-2 border-purple-500 bg-purple-50 transition-all';
+        }
+
+        async function getRecommendations() {
+            if (!currentPlatform) {
+                alert('Pilih platform terlebih dahulu!');
+                return;
+            }
+
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword.trim()) {
+                alert('Masukkan kata kunci!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/recommend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ platform: currentPlatform, keyword })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayRecommendations(data.recommendations);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+   function displayRecommendations(recommendations) {
+    const resultsDiv = document.getElementById('recommendationResults');
+    resultsDiv.innerHTML = '';
+    
+    if (recommendations.length === 0) {
+        resultsDiv.innerHTML = '<p class="col-span-3 text-center text-gray-500">Tidak ada hasil ditemukan</p>';
+        return;
+    }
+
+    recommendations.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all';
+        
+        // Escape HTML untuk keamanan
+        const captionSafe = (item.caption || 'No caption')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        
+        card.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-purple-600 uppercase">${item.category || 'Unknown'}</span>
+                <span class="text-xs px-2 py-1 rounded-full ${item.is_popular ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}">
+                    ${item.is_popular ? '🔥 Popular' : 'Regular'}
+                </span>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4 mb-4 max-h-80 overflow-y-auto">
+                <p class="text-xs font-semibold text-gray-500 mb-2">📝 CAPTION:</p>
+                <pre class="text-sm text-gray-700 font-sans leading-relaxed whitespace-pre-wrap break-words">${captionSafe}</pre>
+            </div>
+            
+            <div class="mb-3">
+                <p class="text-xs font-semibold text-gray-500 mb-1">🏷️ HASHTAGS:</p>
+                <p class="text-sm text-blue-600 break-words">${item.hashtags || 'No hashtags'}</p>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+                <div class="bg-blue-50 rounded p-2">
+                    <p class="text-xs text-gray-500">Likes</p>
+                    <p class="text-sm font-bold text-blue-600">${item.likes.toLocaleString()}</p>
+                </div>
+                <div class="bg-green-50 rounded p-2">
+                    <p class="text-xs text-gray-500">Views</p>
+                    <p class="text-sm font-bold text-green-600">${item.views.toLocaleString()}</p>
+                </div>
+                <div class="bg-purple-50 rounded p-2">
+                    <p class="text-xs text-gray-500">Comments</p>
+                    <p class="text-sm font-bold text-purple-600">${item.comments.toLocaleString()}</p>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center border-t pt-3">
+                <div class="text-xs">
+                    <span class="font-semibold text-gray-500">Similarity:</span>
+                    <span class="text-purple-600 font-bold">${(item.similarity_score * 100).toFixed(1)}%</span>
+                </div>
+                <a href="${item.video_url}" target="_blank" rel="noopener noreferrer"
+                   class="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full hover:from-purple-600 hover:to-pink-600 transition-all flex items-center gap-1">
+                    ▶️ Tonton Video
+                </a>
+            </div>
+        `;
+        
+        resultsDiv.appendChild(card);
+    });
+
+    document.getElementById('resultsSection').classList.remove('hidden');
+}    
