@@ -2,7 +2,7 @@
 Main Flask application
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from backend.config import config
 from backend.api import auth_bp, recommend_bp, favorites_bp
@@ -18,7 +18,12 @@ logger = logging.getLogger(__name__)
 
 def create_app(config_name='development'):
     """Application factory pattern"""
-    app = Flask(__name__)
+    
+    # ✅ FIX: Static folder config di sini!
+    app = Flask(__name__,
+                static_folder='../frontend',
+                static_url_path='')
+    
     app.url_map.strict_slashes = False
 
     # Load configuration
@@ -29,13 +34,30 @@ def create_app(config_name='development'):
     # =======================
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     
-
     # =======================
     # REGISTER BLUEPRINTS
     # =======================
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(recommend_bp, url_prefix='/api/recommend')
     app.register_blueprint(favorites_bp, url_prefix='/api/favorites')
+
+    # =======================
+    # SERVE FRONTEND (ROOT)
+    # =======================
+    @app.route('/')
+    def index():
+        """Serve frontend homepage"""
+        logger.info("Serving frontend index.html")
+        return send_from_directory(app.static_folder, 'index.html')
+    
+    # =======================
+    # SERVE STATIC FILES
+    # =======================
+    @app.route('/<path:path>')
+    def serve_static(path):
+        """Serve static files (CSS, JS, images)"""
+        logger.info(f"Serving static file: {path}")
+        return send_from_directory(app.static_folder, path)
 
     # =======================
     # HEALTH CHECK
@@ -49,10 +71,11 @@ def create_app(config_name='development'):
         }), 200
 
     # =======================
-    # ROOT
+    # API ROOT INFO
     # =======================
-    @app.route('/', methods=['GET'])
-    def root():
+    @app.route('/api', methods=['GET'])
+    def api_root():
+        """API information endpoint"""
         return jsonify({
             'message': 'Content Recommender API',
             'version': '1.0.0',
@@ -79,10 +102,8 @@ def create_app(config_name='development'):
 
     return app
 
-# Create app instance
-app = create_app()
-
-# ... existing code ...
+# ✅ Create app instance (production env)
+app = create_app(os.environ.get('FLASK_ENV', 'development'))
 
 # =======================
 # PORT CONFIGURATION
